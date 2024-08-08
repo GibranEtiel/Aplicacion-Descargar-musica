@@ -1,0 +1,23 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descargar Musica De YouTube</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="{% static 'js/script.js' %}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Descargar Musica De YouTube</h1>
+        <form id="downloadForm" method="post">
+            {% csrf_token %}
+            <input type="text" id="youtubeUrl" name="url" placeholder="Ingresa Url" required>
+            <button type="submit">Descargar</button>
+        </form>
+        <div id="loading" class="loading">Descargando...</div>
+        <div id="notification" class="notification"></div>
+    </div>
+</body>
+</html>
