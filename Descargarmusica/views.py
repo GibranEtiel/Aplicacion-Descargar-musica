@@ -3,7 +3,6 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import yt_dlp
 import os
-from subprocess import run
 import tempfile
 
 @csrf_exempt
@@ -17,23 +16,23 @@ def download_audio(request):
         with tempfile.TemporaryDirectory() as temp_dir:
             ydl_opts = {
                 'format': 'bestaudio/best',
-                'outtmpl': os.path.join(temp_dir, 'audio.%(ext)s'),
+                'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
                     'preferredcodec': 'mp3',
-                    'preferredquality': '192',
+                    'preferredquality': '320',
                 }],
-                'progress_hooks': [lambda d: print(d)],
             }
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
-                
-                audio_file = os.path.join(temp_dir, 'audio.mp3')
-                with open(audio_file, 'rb') as f:
-                    response = HttpResponse(f.read(), content_type='audio/mp3')
-                    response['Content-Disposition'] = 'attachment; filename="audio.mp3"'
-                    return response
+                    result = ydl.extract_info(url, download=True)
+                    title = result.get('title', 'audio').replace("/", "-")
+                    audio_file = os.path.join(temp_dir, f'{title}.mp3')
+
+                    with open(audio_file, 'rb') as f:
+                        response = HttpResponse(f.read(), content_type='audio/mp3')
+                        response['Content-Disposition'] = f'attachment; filename="{title}.mp3"'
+                        return response
             except Exception as e:
                 return JsonResponse({'error': str(e)}, status=500)
     

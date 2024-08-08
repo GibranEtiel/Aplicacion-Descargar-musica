@@ -1,41 +1,41 @@
-document.getElementById('downloadForm').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const url = document.getElementById('youtubeUrl').value;
-    const loading = document.getElementById('loading');
-    const notification = document.getElementById('notification');
-
-    loading.classList.add('show');
-    notification.textContent = '';
-
-    const formData = new FormData();
-    formData.append('url', url);
-
+document.getElementById('downloadForm').onsubmit = function() {
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('notification').innerText = '';
+    
     fetch('', {
         method: 'POST',
-        body: formData,
         headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        }
+            'X-CSRFToken': document.getElementsByName('csrfmiddlewaretoken')[0].value,
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams(new FormData(this))
     })
     .then(response => {
+        document.getElementById('loading').style.display = 'none';
         if (response.ok) {
-            return response.blob();
+            response.blob().then(blob => {
+                const contentDisposition = response.headers.get('Content-Disposition');
+                const filename = contentDisposition.split('filename=')[1].replace(/"/g, '');
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.getElementById('notification').innerText = 'Descarga completa';
+            });
         } else {
-            throw new Error('Failed to download file');
+            response.json().then(data => {
+                document.getElementById('notification').innerText = `Error: ${data.error}`;
+            });
         }
     })
-    .then(blob => {
-        loading.classList.remove('show');
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'audio.mp3';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-    })
     .catch(error => {
-        loading.classList.remove('show');
-        notification.textContent = 'An error occurred: ' + error.message;
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('notification').innerText = `Error: ${error}`;
     });
-});
+
+    return false;  // prevent form from submitting the default way
+};
